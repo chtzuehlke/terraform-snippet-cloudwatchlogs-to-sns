@@ -3,11 +3,7 @@ variable "lambda_name" {
     default = "cloudwatch_logs_to_sns"
 }
 
-variable "log_group_source_name" {
-    type = string
-}
-
-variable "log_group_source_arn" {
+variable "log_group_source" {
     type = string
 }
 
@@ -18,6 +14,10 @@ variable "log_filter_pattern" {
 
 variable "sns_topic_target" {
     type = string
+}
+
+data "aws_cloudwatch_log_group" "log_group_source" {
+  name = var.log_group_source
 }
 
 data "archive_file" "cloudwatch_logs_to_sns_lambda" {
@@ -144,12 +144,12 @@ resource "aws_lambda_permission" "cloudwatch_logs_to_sns_lambda_cloudwatch_permi
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.cloudwatch_logs_to_sns_lambda.function_name
   principal     = "logs.${data.aws_region.current.name}.amazonaws.com"
-  source_arn    = var.log_group_source_arn
+  source_arn    = data.aws_cloudwatch_log_group.log_group_source.arn
 }
 
 resource "aws_cloudwatch_log_subscription_filter" "sample_error_log_filter" {
   name            = "${var.lambda_name}_logfilter"
-  log_group_name  = var.log_group_source_name
+  log_group_name  = data.aws_cloudwatch_log_group.log_group_source.name
   filter_pattern  = var.log_filter_pattern
   destination_arn = aws_lambda_function.cloudwatch_logs_to_sns_lambda.arn
 }

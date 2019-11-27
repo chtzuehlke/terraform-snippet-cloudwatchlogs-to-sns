@@ -22,8 +22,7 @@ resource "aws_cloudwatch_log_group" "sample_error_log_source" {
 
 module "bucket_a" {
     source = "./modules/cloudwatch2sns"
-    log_group_source_name = aws_cloudwatch_log_group.sample_error_log_source.name
-    log_group_source_arn = aws_cloudwatch_log_group.sample_error_log_source.arn
+    log_group_source = aws_cloudwatch_log_group.sample_error_log_source.name
     sns_topic_target = aws_sns_topic.sample_error_log_destination_sns.arn
 }
 
