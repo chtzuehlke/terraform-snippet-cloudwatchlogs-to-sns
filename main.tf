@@ -11,9 +11,9 @@ terraform {
     }
 }
 
-data "archive_file" "lambda_zip_inline" {
+data "archive_file" "cloudwatch_logs_to_sns_lambda" {
   type        = "zip"
-  output_path = "/tmp/lambda_zip_inline.zip"
+  output_path = "/tmp/cloudwatch_logs_to_sns_lambda.zip"
   source {
     content  = <<EOF
 var AWS = require('aws-sdk');
@@ -29,12 +29,12 @@ const unzip = (payload) => {
             resolve(JSON.parse(result.toString('ascii')));
         }
     })
-  })
+  });
 }
 
 exports.handler = async (event) => {
 	try {
-		var payload = new Buffer(event.awslogs.data, 'base64');
+		let payload = new Buffer(event.awslogs.data, 'base64');
 	    let result = await unzip(payload);		
 		await sns.publish({
 		    TopicArn: process.env.SNS_TOPIC,
@@ -54,9 +54,8 @@ EOF
   }
 }
 
-resource "aws_iam_role" "iam_for_lambda" {
-  name = "iam_for_lambda"
-
+resource "aws_iam_role" "cloudwatch_logs_to_sns_lambda_role" {
+  name = "cloudwatch_logs_to_sns_lambda_role"
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -73,8 +72,8 @@ resource "aws_iam_role" "iam_for_lambda" {
 EOF
 }
 
-resource "aws_iam_policy" "lambda_logging" {
-  name = "lambda_logging"
+resource "aws_iam_policy" "cloudwatch_logs_to_sns_lambda_policy" {
+  name = "cloudwatch_logs_to_sns_lambda_policy"
   path = "/"
   description = "IAM policy for logging/sending to SNS from a lambda"
 
@@ -95,7 +94,7 @@ resource "aws_iam_policy" "lambda_logging" {
       "Action": [
         "sns:*"
       ],
-      "Resource": "${aws_sns_topic.error_logs.arn}",
+      "Resource": "${aws_sns_topic.sample_error_log_destination_sns.arn}",
       "Effect": "Allow"
     }
   ]
@@ -103,51 +102,51 @@ resource "aws_iam_policy" "lambda_logging" {
 EOF
 }
 
-resource "aws_iam_role_policy_attachment" "lambda_logs" {
-  role = aws_iam_role.iam_for_lambda.name
-  policy_arn = aws_iam_policy.lambda_logging.arn
+resource "aws_iam_role_policy_attachment" "cloudwatch_logs_to_sns_lambda_policy_attachment" {
+  role = aws_iam_role.cloudwatch_logs_to_sns_lambda_role.name
+  policy_arn = aws_iam_policy.cloudwatch_logs_to_sns_lambda_policy.arn
 }
 
-resource "aws_cloudwatch_log_group" "example" {
-  name              = "/aws/lambda/test"
-  retention_in_days = 14
+resource "aws_cloudwatch_log_group" "cloudwatch_logs_to_sns_lambda_logs" {
+  name              = "/lambda/cloudwatch_logs_to_sns"
+  retention_in_days = 7
 }
 
-resource "aws_lambda_function" "lambda_zip_inline" {
-  filename         = data.archive_file.lambda_zip_inline.output_path
-  source_code_hash = data.archive_file.lambda_zip_inline.output_base64sha256
-  function_name    = "test"
-  role             = aws_iam_role.iam_for_lambda.arn
+resource "aws_lambda_function" "cloudwatch_logs_to_sns_lambda" {
+  filename         = data.archive_file.cloudwatch_logs_to_sns_lambda.output_path
+  source_code_hash = data.archive_file.cloudwatch_logs_to_sns_lambda.output_base64sha256
+  function_name    = "cloudwatch_logs_to_sns"
+  role             = aws_iam_role.cloudwatch_logs_to_sns_lambda_role.arn
   runtime          = "nodejs8.10"
   handler          =  "exports.handler"
-  depends_on       = [aws_iam_role_policy_attachment.lambda_logs, aws_cloudwatch_log_group.example]
+  depends_on       = [aws_iam_role_policy_attachment.cloudwatch_logs_to_sns_lambda_policy_attachment, aws_cloudwatch_log_group.cloudwatch_logs_to_sns_lambda_logs]
   environment {
     variables = {
-      SNS_TOPIC = aws_sns_topic.error_logs.arn
+      SNS_TOPIC = aws_sns_topic.sample_error_log_destination_sns.arn
     }
   }
 }
 
-resource "aws_sns_topic" "error_logs" {
-  name = "test-error-logs"
+resource "aws_sns_topic" "sample_error_log_destination_sns" {
+  name = "sample_error_log_destination"
 }
 
-resource "aws_cloudwatch_log_group" "source" {
-  name              = "/aws/lambda/testsource"
+resource "aws_cloudwatch_log_group" "sample_error_log_source" {
+  name              = "sample_error_log_source"
   retention_in_days = 14
 }
 
-resource "aws_lambda_permission" "allow_cloudwatch" {
+resource "aws_lambda_permission" "cloudwatch_logs_to_sns_lambda_cloudwatch_permissions" {
   statement_id  = "AllowExecutionFromCloudWatch"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.lambda_zip_inline.function_name
+  function_name = aws_lambda_function.cloudwatch_logs_to_sns_lambda.function_name
   principal     = "logs.eu-central-1.amazonaws.com"
-  source_arn    = aws_cloudwatch_log_group.source.arn
+  source_arn    = aws_cloudwatch_log_group.sample_error_log_source.arn
 }
 
-resource "aws_cloudwatch_log_subscription_filter" "test_lambdafunction_logfilter" {
+resource "aws_cloudwatch_log_subscription_filter" "sample_error_log_filter" {
   name            = "test_lambdafunction_logfilter"
-  log_group_name  = aws_cloudwatch_log_group.source.name
-  filter_pattern  = ""
-  destination_arn = aws_lambda_function.lambda_zip_inline.arn
+  log_group_name  = aws_cloudwatch_log_group.sample_error_log_source.name
+  filter_pattern  = "ERROR"
+  destination_arn = aws_lambda_function.cloudwatch_logs_to_sns_lambda.arn
 }

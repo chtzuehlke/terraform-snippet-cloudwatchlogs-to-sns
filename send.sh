@@ -1,5 +1,5 @@
 #!/bin/bash
-TOKEN=49600934446419631384148051927194715825385036267196061362
 TIME=$(date +%s000)
-aws logs put-log-events --log-group-name /aws/lambda/testsource --log-stream-name foo --log-events "timestamp=$TIME,message=hello world" --sequence-token $TOKEN
 
+aws logs create-log-stream --log-group-name sample_error_log_source --log-stream-name $TIME
+aws logs put-log-events --log-group-name sample_error_log_source --log-stream-name $TIME --log-events "timestamp=$TIME,message=ERROR hello world" 
