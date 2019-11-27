@@ -38,7 +38,8 @@ exports.handler = async (event) => {
 	    let result = await unzip(payload);		
 		await sns.publish({
 		    TopicArn: process.env.SNS_TOPIC,
-		    Message: JSON.stringify(result, null, 2)
+		    Message: JSON.stringify(result, null, 2),
+            Subject: "Message from CloudWatch Logs"
 		}).promise();
 	}
 	catch (e) {
