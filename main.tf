@@ -20,7 +20,7 @@ resource "aws_cloudwatch_log_group" "sample_error_log_source" {
   retention_in_days = 14
 }
 
-module "bucket_a" {
+module "example" {
     source = "./modules/cloudwatch2sns"
     log_group_source = aws_cloudwatch_log_group.sample_error_log_source.name
     sns_topic_target = aws_sns_topic.sample_error_log_destination_sns.arn
@@ -28,4 +28,8 @@ module "bucket_a" {
 
 output "log_group" {
     value = aws_cloudwatch_log_group.sample_error_log_source.name
+}
+
+output "sns_topic" {
+  value = aws_sns_topic.sample_error_log_destination_sns.arn
 }
