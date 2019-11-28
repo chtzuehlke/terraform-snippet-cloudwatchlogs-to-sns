@@ -44,18 +44,17 @@ const unzip = (payload) => {
 exports.handler = async (event) => {
 	try {
 		let payload = new Buffer(event.awslogs.data, 'base64');
-	    let result = await unzip(payload);		
+	  let result = await unzip(payload);		
 		await sns.publish({
 		    TopicArn: process.env.SNS_TOPIC,
 		    Message: JSON.stringify(result, null, 2),
-            Subject: "Message from CloudWatch Logs"
+        Subject: "Message from CloudWatch Logs"
 		}).promise();
 	}
 	catch (e) {
 		console.log(e);
 		return e;
 	}
-	
 	return "ok";
 };
 EOF
