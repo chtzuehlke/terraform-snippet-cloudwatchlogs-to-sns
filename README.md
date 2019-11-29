@@ -1,3 +1,5 @@
+Demo: How to automatically route ERROR messages from a CloudWatch log group to a SNS topic.
+
 Steps:
 
     terraform init
