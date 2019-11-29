@@ -24,6 +24,8 @@ module "example" {
     source = "./modules/cloudwatch2sns"
     log_group_source = aws_cloudwatch_log_group.sample_error_log_source.name
     sns_topic_target = aws_sns_topic.sample_error_log_destination_sns.arn
+    log_filter_pattern = "ERROR"
+    sns_subject = "ERROR message from ${aws_cloudwatch_log_group.sample_error_log_source.name}"
 }
 
 output "log_group" {

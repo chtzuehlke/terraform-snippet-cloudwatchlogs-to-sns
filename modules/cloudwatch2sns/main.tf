@@ -16,6 +16,10 @@ variable "sns_topic_target" {
     type = string
 }
 
+variable "sns_subject" {
+    type = string
+}
+
 data "aws_cloudwatch_log_group" "log_group_source" {
   name = var.log_group_source
 }
@@ -48,7 +52,7 @@ exports.handler = async (event) => {
 		await sns.publish({
 		    TopicArn: process.env.SNS_TOPIC,
 		    Message: JSON.stringify(result, null, 2),
-        Subject: "Message from CloudWatch Logs"
+		    Subject: process.env.SUBJECT
 		}).promise();
 	}
 	catch (e) {
@@ -132,6 +136,7 @@ resource "aws_lambda_function" "cloudwatch_logs_to_sns_lambda" {
   environment {
     variables = {
       SNS_TOPIC = var.sns_topic_target
+      SUBJECT = var.sns_subject
     }
   }
 }

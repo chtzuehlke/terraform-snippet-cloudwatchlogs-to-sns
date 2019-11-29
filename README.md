@@ -1,7 +1,11 @@
 Steps:
 
     terraform init
-    terraform apply
+    terraform apply --auto-approve
+
     ./subscribe.sh "your@email.com"
-    ./send.sh 
-    terraform destroy
+    #confirm your subscription
+
+    ./send.sh "ERROR hello world"
+
+    terraform destroy --auto-approve
