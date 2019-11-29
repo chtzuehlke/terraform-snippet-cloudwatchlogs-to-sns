@@ -6,8 +6,9 @@ Steps:
     terraform apply --auto-approve
 
     ./subscribe.sh "your@email.com"
-    #confirm your subscription
+    #go to your inbox and confirm your subscription
 
     ./send.sh "ERROR hello world"
+    #go to your inbox and verify the notification mail
 
     terraform destroy --auto-approve
